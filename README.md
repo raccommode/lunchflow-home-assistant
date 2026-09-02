@@ -8,6 +8,16 @@ A read-only Home Assistant custom integration for your [Lunch Flow](https://lunc
 
 This project is an independent community integration and is not affiliated with or endorsed by Lunch Flow.
 
+## One-click setup
+
+First, open this repository in HACS and install Lunch Flow:
+
+[![Open your Home Assistant instance and open this repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=raccommode&repository=lunchflow-home-assistant&category=integration)
+
+After HACS finishes installing the integration, restart Home Assistant. Then start the Lunch Flow setup:
+
+[![Open your Home Assistant instance and start setting up this integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=lunchflow)
+
 ## Features
 
 - UI setup with a Lunch Flow Personal API key
@@ -30,11 +40,13 @@ In Lunch Flow, go to **Destinations → Add Destination → API**. Copy the gene
 
 ## Installation with HACS
 
-1. Open HACS in Home Assistant.
-2. Open the three-dot menu and choose **Custom repositories**.
-3. Add `https://github.com/raccommode/lunchflow-home-assistant` as an **Integration** repository.
-4. Search for **Lunch Flow** and install it.
-5. Restart Home Assistant.
+Click the button to add this repository to HACS automatically:
+
+[![Open your Home Assistant instance and open this repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=raccommode&repository=lunchflow-home-assistant&category=integration)
+
+Then select **Download**, wait for HACS to finish, and restart Home Assistant.
+
+If the button is unavailable, add `https://github.com/raccommode/lunchflow-home-assistant` manually under **HACS → Custom repositories** and select **Integration** as the category.
 
 ## Manual installation
 
@@ -43,10 +55,11 @@ In Lunch Flow, go to **Destinations → Add Destination → API**. Copy the gene
 
 ## Configuration
 
-1. In Home Assistant, go to **Settings → Devices & services**.
-2. Select **Add Integration**.
-3. Search for **Lunch Flow**.
-4. Paste the Personal API key from your Lunch Flow API destination.
+After installing and restarting Home Assistant, click the button to start the Lunch Flow configuration flow:
+
+[![Open your Home Assistant instance and start setting up this integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=lunchflow)
+
+Alternatively, go to **Settings → Devices & services → Add Integration**, search for **Lunch Flow**, and paste the Personal API key from your Lunch Flow API destination.
 
 Only one Lunch Flow config entry is needed. Every account exposed by the API destination is discovered automatically.
 
