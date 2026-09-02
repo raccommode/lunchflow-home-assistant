@@ -37,6 +37,15 @@
       "balance": {
         "name": "Balance"
       },
+      "converted_balance": {
+        "name": "Converted balance ({currency})"
+      },
+      "converted_holdings_value": {
+        "name": "Converted holdings value ({currency})"
+      },
+      "converted_last_transaction": {
+        "name": "Converted last transaction ({currency})"
+      },
       "holdings_value": {
         "name": "Holdings value"
       },
@@ -53,15 +62,17 @@
       "init": {
         "data": {
           "include_pending": "Include pending transactions",
+          "target_currency": "Target currency",
           "transaction_days": "Transaction history (days)",
           "update_interval": "Update interval (minutes)"
         },
         "data_description": {
           "include_pending": "Include unposted transactions in the transaction sensors.",
+          "target_currency": "Optionally add separate monetary sensors in one currency using Frankfurter reference rates. Original sensors are unchanged. No banking data is sent to Frankfurter.",
           "transaction_days": "Fetch transactions from this many days before today (1–365).",
           "update_interval": "How often Home Assistant requests new data (5–1440 minutes)."
         },
-        "description": "Control how often Lunch Flow is polled and how much transaction history is requested.",
+        "description": "Choose an optional conversion currency, polling frequency, and transaction history range.",
         "title": "Lunch Flow options"
       }
     }

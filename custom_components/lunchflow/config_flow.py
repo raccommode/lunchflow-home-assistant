@@ -19,9 +19,12 @@ from .api import (
 )
 from .const import (
     CONF_INCLUDE_PENDING,
+    CONF_TARGET_CURRENCY,
     CONF_TRANSACTION_DAYS,
     CONF_UPDATE_INTERVAL,
+    CURRENCY_OPTIONS,
     DEFAULT_INCLUDE_PENDING,
+    DEFAULT_TARGET_CURRENCY,
     DEFAULT_TRANSACTION_DAYS,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
@@ -37,6 +40,10 @@ def _options_schema(options: dict[str, Any] | None = None) -> vol.Schema:
     current = options or {}
     return vol.Schema(
         {
+            vol.Required(
+                CONF_TARGET_CURRENCY,
+                default=current.get(CONF_TARGET_CURRENCY, DEFAULT_TARGET_CURRENCY),
+            ): vol.In(CURRENCY_OPTIONS),
             vol.Required(
                 CONF_UPDATE_INTERVAL,
                 default=current.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),

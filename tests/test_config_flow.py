@@ -2,13 +2,31 @@
 
 from unittest.mock import patch
 
+import pytest
+import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_API_KEY
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.lunchflow.api import LunchFlowAuthenticationError
-from custom_components.lunchflow.const import DOMAIN
+from custom_components.lunchflow.config_flow import _options_schema
+from custom_components.lunchflow.const import CONF_TARGET_CURRENCY, DOMAIN
+
+
+def test_currency_option_defaults_and_validation():
+    assert _options_schema()({})[CONF_TARGET_CURRENCY] == "original"
+    assert (
+        _options_schema({CONF_TARGET_CURRENCY: "CAD"})({})[CONF_TARGET_CURRENCY]
+        == "CAD"
+    )
+    for currency in ("CAD", "EUR", "USD"):
+        assert (
+            _options_schema()({CONF_TARGET_CURRENCY: currency})[CONF_TARGET_CURRENCY]
+            == currency
+        )
+    with pytest.raises(vol.Invalid):
+        _options_schema()({CONF_TARGET_CURRENCY: "INVALID"})
 
 
 async def test_user_flow_creates_entry(hass) -> None:

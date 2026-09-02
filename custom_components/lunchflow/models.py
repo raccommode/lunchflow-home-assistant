@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Any, TypedDict
 
+from .exchange_rates import ExchangeRates
+
 
 class LunchFlowAccount(TypedDict, total=False):
     """A Lunch Flow bank account."""
@@ -70,6 +72,7 @@ class AccountSnapshot:
     balance: Balance
     transactions: tuple[LunchFlowTransaction, ...]
     holdings: HoldingsSummary | None
+    exchange_rates: ExchangeRates | None = None
 
 
 def as_decimal(value: object) -> Decimal:

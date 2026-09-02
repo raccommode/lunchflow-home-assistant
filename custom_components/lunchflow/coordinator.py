@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import replace
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
@@ -22,14 +23,17 @@ from .api import (
 from .const import (
     CONF_API_KEY,
     CONF_INCLUDE_PENDING,
+    CONF_TARGET_CURRENCY,
     CONF_TRANSACTION_DAYS,
     CONF_UPDATE_INTERVAL,
     DEFAULT_INCLUDE_PENDING,
+    DEFAULT_TARGET_CURRENCY,
     DEFAULT_TRANSACTION_DAYS,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
     SUPPORTED_HOLDINGS_PROVIDERS,
 )
+from .exchange_rates import ExchangeRateClient, ExchangeRateError
 from .models import AccountSnapshot, LunchFlowAccount
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,6 +46,12 @@ class LunchFlowDataUpdateCoordinator(DataUpdateCoordinator[dict[str, AccountSnap
         """Initialize the coordinator."""
         self.api = LunchFlowApiClient(
             aiohttp_client.async_get_clientsession(hass), entry.data[CONF_API_KEY]
+        )
+        self.target_currency = entry.options.get(
+            CONF_TARGET_CURRENCY, DEFAULT_TARGET_CURRENCY
+        )
+        self.exchange_rate_client = ExchangeRateClient(
+            aiohttp_client.async_get_clientsession(hass)
         )
         self._include_pending = entry.options.get(
             CONF_INCLUDE_PENDING, DEFAULT_INCLUDE_PENDING
@@ -73,6 +83,21 @@ class LunchFlowDataUpdateCoordinator(DataUpdateCoordinator[dict[str, AccountSnap
             raise ConfigEntryAuthFailed("Lunch Flow rejected the API key") from err
         except (LunchFlowApiError, TimeoutError) as err:
             raise UpdateFailed(f"Error communicating with Lunch Flow: {err}") from err
+
+        if self.target_currency != DEFAULT_TARGET_CURRENCY and snapshots:
+            try:
+                rates = await self.exchange_rate_client.async_get_rates()
+            except ExchangeRateError:
+                # A separate service outage must not hide original banking data.
+                rates = None
+                _LOGGER.warning(
+                    "No recent exchange rates; "
+                    "affected converted sensors are unavailable"
+                )
+            # Include rates in coordinator equality so FX-only changes update sensors.
+            snapshots = [
+                replace(snapshot, exchange_rates=rates) for snapshot in snapshots
+            ]
 
         return {
             str(snapshot.account["id"]): snapshot

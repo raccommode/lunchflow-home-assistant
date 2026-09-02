@@ -11,7 +11,10 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import LunchFlowRuntimeData
+from .const import DEFAULT_TARGET_CURRENCY
+from .coordinator import LunchFlowDataUpdateCoordinator
 from .entity import LunchFlowEntity
+from .exchange_rates import RATE_SOURCE
 from .models import LunchFlowTransaction, as_decimal
 
 
@@ -22,24 +25,34 @@ async def async_setup_entry(
 ) -> None:
     """Set up Lunch Flow sensors from a config entry."""
     coordinator = entry.runtime_data.coordinator
-    known_account_ids: set[str] = set()
+    known_entity_ids: set[str] = set()
 
     @callback
     def async_add_new_accounts() -> None:
         entities: list[SensorEntity] = []
         for account_id, snapshot in coordinator.data.items():
-            if account_id in known_account_ids:
-                continue
-            known_account_ids.add(account_id)
-            entities.extend(
-                (
-                    LunchFlowBalanceSensor(coordinator, account_id),
-                    LunchFlowTransactionCountSensor(coordinator, account_id),
-                    LunchFlowLastTransactionSensor(coordinator, account_id),
+            candidates = [
+                LunchFlowBalanceSensor(coordinator, account_id),
+                LunchFlowTransactionCountSensor(coordinator, account_id),
+                LunchFlowLastTransactionSensor(coordinator, account_id),
+            ]
+            if coordinator.target_currency != DEFAULT_TARGET_CURRENCY:
+                candidates.extend(
+                    (
+                        LunchFlowConvertedBalanceSensor(coordinator, account_id),
+                        LunchFlowConvertedTransactionSensor(coordinator, account_id),
+                    )
                 )
-            )
             if snapshot.holdings is not None:
-                entities.append(LunchFlowHoldingsSensor(coordinator, account_id))
+                candidates.append(LunchFlowHoldingsSensor(coordinator, account_id))
+                if coordinator.target_currency != DEFAULT_TARGET_CURRENCY:
+                    candidates.append(
+                        LunchFlowConvertedHoldingsSensor(coordinator, account_id)
+                    )
+            for entity in candidates:
+                if entity.unique_id not in known_entity_ids:
+                    known_entity_ids.add(entity.unique_id)
+                    entities.append(entity)
         if entities:
             async_add_entities(entities)
 
@@ -181,3 +194,98 @@ class LunchFlowHoldingsSensor(LunchFlowEntity, SensorEntity):
         """Return the number of holdings included in the total."""
         holdings = self.snapshot.holdings
         return {"holding_count": holdings.count} if holdings else {}
+
+
+class ConvertedMonetarySensor:
+    """Reuse the original monetary sensor while exposing a separate converted entity."""
+
+    def __init__(
+        self, coordinator: LunchFlowDataUpdateCoordinator, account_id: str
+    ) -> None:
+        """Keep a different history for every target currency."""
+        super().__init__(coordinator, account_id)
+        self._target_currency = coordinator.target_currency
+        self._attr_unique_id += f"_converted_{self._target_currency.lower()}"
+        self._attr_translation_placeholders = {"currency": self._target_currency}
+
+    @property
+    def _conversion_rate(self) -> Decimal | None:
+        """Never assume parity when a rate is missing."""
+        source = super().native_unit_of_measurement
+        if source == self._target_currency:
+            return Decimal(1)
+        rates = self.snapshot.exchange_rates
+        return rates.rate(source, self._target_currency) if rates and source else None
+
+    @property
+    def available(self) -> bool:
+        """Unknown transactions stay unknown; missing rates are unavailable."""
+        return super().available and (
+            super().native_value is None or self._conversion_rate is not None
+        )
+
+    @property
+    def native_value(self) -> Decimal | None:
+        """Convert locally without rounding before aggregation."""
+        if not super().available:
+            return None
+        amount = super().native_value
+        rate = self._conversion_rate
+        if amount is None or not amount.is_finite() or rate is None:
+            return None
+        return amount * rate
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Every converted sensor uses the selected target currency."""
+        return self._target_currency
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the original money and reference rate for traceability."""
+        if not super().available:
+            return {}
+        amount = super().native_value
+        source = super().native_unit_of_measurement
+        rate = self._conversion_rate
+        rates = self.snapshot.exchange_rates
+        return {
+            **super().extra_state_attributes,
+            "original_amount": (
+                float(amount) if amount is not None and amount.is_finite() else None
+            ),
+            "original_currency": source,
+            "exchange_rate": float(rate) if rate is not None else None,
+            "exchange_rate_date": (
+                rates.reference_date.isoformat()
+                if rates is not None and source != self._target_currency
+                else None
+            ),
+            "exchange_rate_source": (
+                "Identity (same currency)"
+                if source == self._target_currency
+                else RATE_SOURCE
+            ),
+        }
+
+
+class LunchFlowConvertedBalanceSensor(ConvertedMonetarySensor, LunchFlowBalanceSensor):
+    """Account balance in the selected currency."""
+
+    _attr_translation_key = "converted_balance"
+
+
+class LunchFlowConvertedTransactionSensor(
+    ConvertedMonetarySensor, LunchFlowLastTransactionSensor
+):
+    """Latest transaction valued at the latest reference rate, not its historic rate."""
+
+    _attr_translation_key = "converted_last_transaction"
+
+
+class LunchFlowConvertedHoldingsSensor(
+    ConvertedMonetarySensor, LunchFlowHoldingsSensor
+):
+    """Investment value in the selected currency."""
+
+    _attr_translation_key = "converted_holdings_value"
