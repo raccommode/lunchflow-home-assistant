@@ -1,0 +1,69 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Lunch Flow is already configured.",
+      "reauth_successful": "The API key was updated successfully."
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to Lunch Flow. Try again later.",
+      "invalid_auth": "The API key is invalid or does not have access to any API destination.",
+      "unknown": "Unexpected error. Check the Home Assistant logs for more information."
+    },
+    "step": {
+      "reauth_confirm": {
+        "data": {
+          "api_key": "API key"
+        },
+        "data_description": {
+          "api_key": "The replacement Personal API key from your Lunch Flow API destination."
+        },
+        "description": "Lunch Flow rejected the saved API key. Enter a valid Personal API key to reconnect.",
+        "title": "Reconnect Lunch Flow"
+      },
+      "user": {
+        "data": {
+          "api_key": "API key"
+        },
+        "data_description": {
+          "api_key": "Create an API destination in Lunch Flow, then paste its Personal API key here."
+        },
+        "description": "Connect Home Assistant to your own Lunch Flow accounts using the Personal API.",
+        "title": "Connect Lunch Flow"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "balance": {
+        "name": "Balance"
+      },
+      "holdings_value": {
+        "name": "Holdings value"
+      },
+      "last_transaction": {
+        "name": "Last transaction"
+      },
+      "transaction_count": {
+        "name": "Transaction count"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "include_pending": "Include pending transactions",
+          "transaction_days": "Transaction history (days)",
+          "update_interval": "Update interval (minutes)"
+        },
+        "data_description": {
+          "include_pending": "Include unposted transactions in the transaction sensors.",
+          "transaction_days": "Fetch transactions from this many days before today (1–365).",
+          "update_interval": "How often Home Assistant requests new data (5–1440 minutes)."
+        },
+        "description": "Control how often Lunch Flow is polled and how much transaction history is requested.",
+        "title": "Lunch Flow options"
+      }
+    }
+  }
+}
