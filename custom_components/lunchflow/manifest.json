@@ -1,12 +1,12 @@
 {
+  "domain": "lunchflow",
+  "name": "Lunch Flow",
   "codeowners": ["@raccommode"],
   "config_flow": true,
   "documentation": "https://github.com/raccommode/lunchflow-home-assistant",
-  "domain": "lunchflow",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/raccommode/lunchflow-home-assistant/issues",
-  "name": "Lunch Flow",
   "requirements": [],
   "single_config_entry": true,
   "version": "0.1.0"
